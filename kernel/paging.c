@@ -5,15 +5,29 @@
 PageTable page_diectory = NULL ;
 
 void initialise_paging() {
-    page_diectory = (PageTable) kmalloc(sizeof(PTE)*1024);
+    // Allouer le répertoire de pages 
+    page_diectory = (PageTable) kmalloc_a(sizeof(PTE) * 1024);
+
+    // Initialiser tout à 0
     for (int i = 0; i < 1024; i++) {
         page_diectory[i].value = 0;
     }
 
-    // Charger l'adresse du répertoire de pages dans le registre CR3
-    __asm__ __volatile__("mov %0, %%cr3":: "r"(page_diectory));
+    // IDENTITY MAPPING des 16 premiers Mo
+    for (int t = 0; t < 4; t++) {
+        PageTable table = (PageTable) kmalloc_a(sizeof(PTE) * 1024);
+        for (int p = 0; p < 1024; p++) {
 
-    // Activer la pagination 
+            uint32_t addr = (t * 1024 * 4096) + (p * 4096);
+            table[p].value = addr | 3; // Present + RW
+        }
+        // On place la table dans le répertoire
+        page_diectory[t].value = ((uint32_t)table & 0xFFFFF000) | 3;
+    }
+
+    // Charger CR3
+    __asm__ __volatile__("mov %0, %%cr3":: "r"(page_diectory));
+    // Activer la pagination
     uint32_t cr0;
     __asm__ __volatile__("mov %%cr0, %0": "=r"(cr0));
     cr0 |= 0x80000000;
@@ -21,21 +35,41 @@ void initialise_paging() {
 }
 
 PageTable alloc_page_entry(uint32_t address, int is_writeable, int is_kernel) {
-    // Allouer l'espace pour ne pas faire planter le noyau
-    PageTable pgtab = (PageTable) kmalloc_a(sizeof(PTE));
+
+    // Récupère la page de la mémoire virtuelle en fonction de l'adresse
+    uint32_t pde_index = address >> 22;
+    uint32_t pte_index = (address >> 12) & 0x03FF; // 0x03FF = 1023 en décimal (masque 10 bits)
     
-    // Assigner les valeurs selon votre structure
-    pgtab->page_entry.present = 1;                     // La page est mappée
-    pgtab->page_entry.rw = is_writeable;               // 1 pour rw, 0 pour read-only
+    // Si la table de page n'existe pas encore dans le répertoire, on la crée
+    if (page_diectory[pde_index].page_entry.present == 0) {
+        PageTable new_table = (PageTable) kmalloc_a(sizeof(PTE) * 1024);
+        for(int i = 0; i < 1024; i++) {
+            new_table[i].value = 0;
+        }
+        page_diectory[pde_index].page_entry.present = 1;
+        page_diectory[pde_index].page_entry.rw = 1;
+        page_diectory[pde_index].page_entry.using = 1;
+        page_diectory[pde_index].page_entry.page = ((uint32_t)new_table >> 12);
+    }
     
-    pgtab->page_entry.using = (is_kernel == 1) ? 0 : 1; 
+    // On récupère le pointeur vers la table de page correspondante
+    PageTable pt = (PageTable) (page_diectory[pde_index].page_entry.page << 12);
     
-    pgtab->page_entry.accses = 0;                      // Sera géré par le processeur
-    pgtab->page_entry.dirty = 0;                       // Sera géré par le processeur
-    pgtab->page_entry.unsed = 0;
+    // Recherche une page de la mémoire physique libre
+    uint32_t phys_page = findfreePage();
+    if (phys_page == 0) {
+        return NULL; // Plus de mémoire disponible !
+    }
     
-    
-    pgtab->page_entry.page = (address >> 12); 
-    
-    return pgtab;
+    // Associe la page physique trouvée à l'adresse virtuelle
+    pt[pte_index].page_entry.present = 1;
+    pt[pte_index].page_entry.rw = is_writeable;
+    pt[pte_index].page_entry.using = (is_kernel == 1) ? 0 : 1;
+    pt[pte_index].page_entry.accses = 0;
+    pt[pte_index].page_entry.dirty = 0;
+    pt[pte_index].page_entry.unsed = 0;
+    pt[pte_index].page_entry.page = (phys_page >> 12);
+
+
+    return pt;
 }
