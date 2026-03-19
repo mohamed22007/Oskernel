@@ -12,7 +12,13 @@
  * 
  */
 typedef struct {
-    // a completer
+    uint32_t present : 1; // Present en mem
+    uint32_t rw      : 1; // mode lire ou ecriture
+    uint32_t using   : 1; // utilisable ou en mode noyeau
+    uint32_t accses  : 1; // accesible
+    uint32_t dirty   : 1; // modifiable
+    uint32_t unsed   : 7; // reserve
+    uint32_t page    : 20; // addres page
 } page_table_entry_t;
 
 /**

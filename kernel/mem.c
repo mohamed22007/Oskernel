@@ -39,9 +39,21 @@ void clearPage(uint32_t addr) {
 uint32_t findfreePage() {
     for (int i =0 ; i < 128 ; i++){
         if (free_page_tabel[i] != 0xFFFFFFFF){
-            
+            for (int j = 0; j < 32; j++) {
+                uint32_t bit = 1 << j;
+                if (!(free_page_tabel[i] & bit)) {
+                    // Calcul de l'adresse physique de la page
+                    uint32_t addr = (i * 32 + j) * PAGE_SIZE;
+                    
+                    // On marque la page comme occupée
+                    setPage(addr);
+                    
+                    return addr;
+                }
+            }
         }
     }
+    return 0 ;
 }
 
 /**
@@ -49,7 +61,13 @@ uint32_t findfreePage() {
  * 
  */
 void init_mem() {
-
+    // Initialiser tout le tableau à 0 (0 = page libre)
+    for (int i = 0; i < NMB_PAGES / 32; i++) {
+        free_page_tabel[i] = 0; 
+    }
+    
+    // on marque la toute première page (adresse 0x0)
+    setPage(0);
 }
 
 /**
@@ -57,5 +75,22 @@ void init_mem() {
  * 
  */
 void print_mem() {
+    int free_pages = 0;
+    int used_pages = 0;
     
+    // Parcourir tout le tableau de bits
+    for (int i = 0; i < NMB_PAGES / 32; i++) {
+        for (int j = 0; j < 32; j++) {
+            uint32_t bit = 1 << j;
+            if (free_page_tabel[i] & bit) {
+                used_pages++; // Le bit est à 1
+            } else {
+                free_pages++; // Le bit est à 0
+            }
+        }
+    }
+    
+    // Affichage des statistiques
+    printf("Pages libres   : %d\n", free_pages);
+    printf("Pages occupees : %d\n", used_pages);
 }
