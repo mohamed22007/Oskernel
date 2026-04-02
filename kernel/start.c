@@ -28,6 +28,8 @@ void kernel_start(void)
         printf("Mapping reussi pour l'adresse 0x%x\n", v_addr);
     }
 
+
+
     // Verifier que la memoire physique a ete consommee
     print_mem(); 
 
