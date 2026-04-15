@@ -15,15 +15,16 @@ extern void handler_IT();
 
 void kernel_start(void)
 {
+    // Initialisations 
     init_console();
     setup_base(0);
     init_time();
-    
-    // Initialiser la gestion de la memoire physique
     init_mem();
-    
-    // Initialiser la pagination
     initialise_paging();
+    init_syscall();
+    sti();
+
+
     
     // Tester l'allocation d'une page
     uint32_t v_addr = 0x40000000;
@@ -50,12 +51,13 @@ void kernel_start(void)
     // Verifier que la memoire physique a ete consommee
     print_mem(); 
 
-    init_syscall();
-    sti();
+    
 
     if (example() == 1){
         printf ( "Appel systeme example ok \n" );
     }
+
+    
 
     while (1) {
         // On vérifie si l'horloge a avancé
