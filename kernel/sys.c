@@ -3,6 +3,7 @@
 #include <n7OS/console.h>
 #include <n7OS/irq.h>
 #include <unistd.h>
+#define NR_example 1
 
 extern void handler_syscall();
 

@@ -38,7 +38,7 @@ PageTable alloc_page_entry(uint32_t address, int is_writeable, int is_kernel) {
 
     // Récupère la page de la mémoire virtuelle en fonction de l'adresse
     uint32_t pde_index = address >> 22;
-    uint32_t pte_index = (address >> 12) & 0x03FF; // 0x03FF = 1023 en décimal (masque 10 bits)
+    uint32_t pte_index = (address >> 12) & 0x03FF; // masque 10 bits
     
     // Si la table de page n'existe pas encore dans le répertoire, on la crée
     if (page_diectory[pde_index].page_entry.present == 0) {

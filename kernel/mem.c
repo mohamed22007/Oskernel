@@ -12,7 +12,7 @@ uint32_t free_page_tabel[NMB_PAGES/32] = {0};
 void setPage(uint32_t addr) {
     uint32_t offset = addr / PAGE_SIZE ;
     uint32_t index = offset / 32 ;
-    uint32_t bit_index = offset % 32 ; ;
+    uint32_t bit_index = offset % 32 ; 
     free_page_tabel[index] |= (1 << bit_index);
 }
 
