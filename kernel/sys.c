@@ -42,5 +42,5 @@ int sys_write(const char *s ,int len){
   for (int i= 0; i<len; i++) {
         console_putchar(s[i]);
   }
-  return 1;
+  return len;
 }

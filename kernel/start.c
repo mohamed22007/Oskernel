@@ -15,16 +15,15 @@ extern void handler_IT();
 
 void kernel_start(void)
 {
-    // Initialisations 
     init_console();
     setup_base(0);
     init_time();
+    
+    // Initialiser la gestion de la memoire physique
     init_mem();
+    
+    // Initialiser la pagination
     initialise_paging();
-    init_syscall();
-    sti();
-
-
     
     // Tester l'allocation d'une page
     uint32_t v_addr = 0x40000000;
@@ -51,7 +50,8 @@ void kernel_start(void)
     // Verifier que la memoire physique a ete consommee
     print_mem(); 
 
-    
+    init_syscall();
+    sti();
 
     if (example() == 1){
         printf ( "Appel systeme example ok \n" );
@@ -60,16 +60,15 @@ void kernel_start(void)
     
 
     while (1) {
-        // On vérifie si l'horloge a avancé
+
         if (last_clk != clk) {
-            last_clk = clk; // TRES IMPORTANT : on met à jour pour attendre le prochain tic !
+            last_clk = clk;
+
             // Afficher l'heure
             afficher_time(heure());
             printf("\r");
             
         }
-    
-        // On met le CPU en pause jusqu'à la prochaine interruption
         hlt();
     }
 }
