@@ -8,6 +8,7 @@
 #include <n7OS/time.h>
 #include <unistd.h>
 #include <n7OS/sys.h>
+#include <n7OS/keyboard.h>
 
 extern void handler_IT();
 
@@ -57,18 +58,23 @@ void kernel_start(void)
         printf ( "Appel systeme example ok \n" );
     }
 
+
+    init_keyboard();
+    while (kgetch() == 'R')
+    {
+    }
+
+    printf(kgetch());
+    
     
 
-    while (1) {
+    
+    afficher_time(heure());
 
-        if (last_clk != clk) {
-            last_clk = clk;
-
-            // Afficher l'heure
-            afficher_time(heure());
-            printf("\r");
-            
-        }
-        hlt();
+    while(1)
+    {
+        /* code */
+        hlt;
     }
+    
 }

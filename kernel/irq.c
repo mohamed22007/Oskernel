@@ -2,7 +2,6 @@
 #include <n7OS/irq.h>
 #include <n7OS/segment.h>
 
-// On utilise la déclaration exacte du header pour éviter le conflit
 extern unsigned long long idt[]; 
 
 void init_irq_entry(int irq_num, uint32_t addr) {
