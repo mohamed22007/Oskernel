@@ -44,55 +44,57 @@
  * the rights to redistribute these changes.
  */
 
+
 #include <stdarg.h>
 #include <doprnt.h>
+#include <unistd.h> 
 #include <n7OS/console.h>
 
-/*
- * This is the function called by printf to send its output to the screen. You
- * have to implement it in the kernel.
+/* SUPPRESSION : On n'appelle plus la fonction noyau directement !
+ * extern void console_putbytes(const char *s, int len);
  */
-extern void console_putbytes(const char *s, int len);
 
-/* This version of printf is implemented in terms of putchar and puts.  */
-
-#define	PRINTF_BUFMAX	128
+#define PRINTF_BUFMAX   128
 
 struct printf_state {
-	char buf[PRINTF_BUFMAX];
-	unsigned int index;
+    char buf[PRINTF_BUFMAX];
+    unsigned int index;
 };
 
 static void
 flush(struct printf_state *state)
 {
-	/*
-	 * It would be nice to call write(1,) here, but if fd_set_console
-	 * has not been called, it will break.
-	 */
-	console_putbytes((const char *)state->buf, state->index);
+    /*
+     * It would be nice to call write(1,) here, but if fd_set_console
+     * has not been called, it will break.
+     */
+    
+    // MODIFICATION : Utilisation de l'appel système 'write'
+    write((const char *)state->buf, state->index);
 
-	state->index = 0;
+    state->index = 0;
 }
 
 static void
 printf_char(arg, c)
-	char *arg;
-	int c;
+    char *arg;
+    int c;
 {
-	struct printf_state *state = (struct printf_state *) arg;
+    struct printf_state *state = (struct printf_state *) arg;
 
-	if ((c == 0) || (c == '\n') || (state->index >= PRINTF_BUFMAX))
-	{
-		flush(state);
-		state->buf[0] = c;
-		console_putbytes((const char *)state->buf, 1);
-	}
-	else
-	{
-		state->buf[state->index] = c;
-		state->index++;
-	}
+    if ((c == 0) || (c == '\n') || (state->index >= PRINTF_BUFMAX))
+    {
+        flush(state);
+        state->buf[0] = c;
+        
+        // MODIFICATION : Utilisation de l'appel système 'write'
+        write((const char *)state->buf, 1);
+    }
+    else
+    {
+        state->buf[state->index] = c;
+        state->index++;
+    }
 }
 
 /*
@@ -100,37 +102,40 @@ printf_char(arg, c)
  */
 int vprintf(const char *fmt, va_list args)
 {
-	struct printf_state state;
+    struct printf_state state;
 
-	state.index = 0;
-	_doprnt(fmt, args, 0, (void (*)())printf_char, (char *) &state);
+    state.index = 0;
+    _doprnt(fmt, args, 0, (void (*)())printf_char, (char *) &state);
 
-	if (state.index != 0)
-	    flush(&state);
+    if (state.index != 0)
+        flush(&state);
 
-	/* _doprnt currently doesn't pass back error codes,
-	   so just assume nothing bad happened.  */
-	return 0;
+    /* _doprnt currently doesn't pass back error codes,
+       so just assume nothing bad happened.  */
+    return 0;
 }
 
 int
 printf(const char *fmt, ...)
 {
-	va_list	args;
-	int err;
+    va_list args;
+    int err;
 
-	va_start(args, fmt);
-	err = vprintf(fmt, args);
-	va_end(args);
+    va_start(args, fmt);
+    err = vprintf(fmt, args);
+    va_end(args);
 
-	return err;
+    return err;
 }
 
 int putchar(int c)
 {
-	char ch = c;
-	console_putbytes(&ch, 1);
-        return (unsigned char)ch;
+    char ch = c;
+    
+    // MODIFICATION : Utilisation de l'appel système 'write'
+    write(&ch, 1);
+    
+    return (unsigned char)ch;
 }
 
 int puts(const char *s)
@@ -138,6 +143,6 @@ int puts(const char *s)
         while (*s) {
                 putchar(*s++);
         }
-	putchar('\n');
+    putchar('\n');
         return 0;
 }

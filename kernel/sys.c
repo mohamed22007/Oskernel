@@ -39,8 +39,6 @@ int sys_shutdown(int n){
 }
 
 int sys_write(const char *s ,int len){
-  for (int i= 0; i<len; i++) {
-        console_putchar(s[i]);
-  }
+  console_putbytes(s, len);
   return len;
 }
